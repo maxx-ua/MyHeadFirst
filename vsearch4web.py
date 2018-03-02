@@ -10,6 +10,16 @@ app.config['dbconfig'] = {'host': '127.0.0.1',
                           'password': 'vsearchpasswd',
                           'database': 'vsearchlogDB', }
 
+@app.route('/login')
+def do_login() ->str:
+    session['logged_in'] = True
+    return 'You are logged in.'
+
+@app.route('/logout')
+def do_logout() ->str:
+    session.pop('logged_in')
+    return 'You are now logged out.'
+
 def log_request(req: 'flask_request', res:str) -> None:
     """Журналирует веб-запрос и возвращает результаты."""
 
@@ -48,27 +58,16 @@ def entry_page() -> 'html':
 @check_logged_in
 def view_the_log() -> 'html':
     """Выводит содержимое файла журнала в виде HTML-таблицы"""
-    with UseDatabase(app.config['dbconfig']) as log:
+    with UseDatabase(app.config['dbconfig']) as cursor:
         sql = """select phrase, letters, ip, browser_string, results from log"""
-        log.execute(sql)
-        contents = log.fetchall()
-
+        cursor.execute(sql)
+        contents = cursor.fetchall()
     titles = ('Phrase', 'Letters', 'Remote_addr', 'User_agent', 'Results')
-
     return render_template('viewlog.html',
                            the_title='View Log',
                            the_row_titles=titles,
                            the_data=contents,)
 
-@app.route('/login')
-def do_login() ->str:
-    session['logged_in'] = True
-    return 'You are logged in.'
-
-@app.route('/logout')
-def do_logout() ->str:
-    session.pop('logged_in')
-    return 'You are now logged out.'
 
 app.secret_key = 'YouWillNeverGuessMySecretKey'
 
