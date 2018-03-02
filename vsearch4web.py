@@ -1,6 +1,7 @@
-from flask import Flask, render_template, request, escape
+from flask import Flask, render_template, request, escape, session
 from DBcm import UseDatabase
 from vsearch import search4letters
+from checker import check_logged_in
 
 app = Flask(__name__)
 
@@ -44,6 +45,7 @@ def entry_page() -> 'html':
                            the_title='Welcome to search4letters on the web!')
 
 @app.route('/viewlog')
+@check_logged_in
 def view_the_log() -> 'html':
     """Выводит содержимое файла журнала в виде HTML-таблицы"""
     with UseDatabase(app.config['dbconfig']) as log:
@@ -57,6 +59,18 @@ def view_the_log() -> 'html':
                            the_title='View Log',
                            the_row_titles=titles,
                            the_data=contents,)
+
+@app.route('/login')
+def do_login() ->str:
+    session['logged_in'] = True
+    return 'You are logged in.'
+
+@app.route('/logout')
+def do_logout() ->str:
+    session.pop('logged_in')
+    return 'You are now logged out.'
+
+app.secret_key = 'YouWillNeverGuessMySecretKey'
 
 if __name__ == '__main__':
     app.run(debug=True)
